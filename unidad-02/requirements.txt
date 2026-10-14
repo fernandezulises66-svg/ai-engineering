@@ -1,0 +1,5 @@
+langchain-core>=1.6
+langchain-anthropic>=1.7
+pydantic>=2.10
+python-dotenv>=1.0
+pytest>=8.0
