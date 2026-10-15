@@ -6,6 +6,7 @@ Entregas y ejercicios del curso de AI Engineering.
 |---|---|---|
 | 1 | Arquitectura asíncrona con Python 3.12 | [unidad-01](./unidad-01) |
 | 2 | Cadenas con LCEL y Runnables · Pre-entrega 2 | [unidad-02](./unidad-02) |
+| 3 | Embeddings y similitud · Pre-entrega 3 (RAG) | [unidad-03](./unidad-03) |
 
 ## Requisitos
 
