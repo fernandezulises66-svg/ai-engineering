@@ -52,6 +52,9 @@ def get_llm():
     from langchain_anthropic import ChatAnthropic
 
     params: dict[str, Any] = {"model": LLM_MODEL, "max_tokens": 1024, "max_retries": 2, "timeout": 60}
+    # Keys no asociadas a un workspace necesitan indicar cuál usar (header anthropic-workspace-id)
+    if workspace := os.getenv("ANTHROPIC_WORKSPACE_ID"):
+        params["default_headers"] = {"anthropic-workspace-id": workspace}
     # Claude 5.x rechaza temperature (error 400): solo se envía si se configura a mano
     if temperature := os.getenv("ANTHROPIC_TEMPERATURE"):
         params["temperature"] = float(temperature)

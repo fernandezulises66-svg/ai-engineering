@@ -28,6 +28,9 @@ def build_model() -> ChatAnthropic:
         "max_retries": 2,  # reintentos de red/429 gestionados por LangChain
         "timeout": 30,
     }
+    # Keys no asociadas a un workspace necesitan indicar cuál usar (header anthropic-workspace-id)
+    if workspace := os.getenv("ANTHROPIC_WORKSPACE_ID"):
+        params["default_headers"] = {"anthropic-workspace-id": workspace}
     # Los modelos Claude 5.x rechazan temperature (error 400). Solo se envía
     # si se configuró explícitamente para un modelo que la acepte.
     if temperature := os.getenv("ANTHROPIC_TEMPERATURE"):
