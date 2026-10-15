@@ -54,24 +54,19 @@ pytest -v                        # tests offline (sin API keys)
 
 `demo.py` corre en paralelo cuatro preguntas: dos cuya respuesta está en los documentos (garantía de una bisagra y arrepentimiento en muebles a medida) y dos trampa (cuotas sin interés y cantidad de empleados), que no figuran en ningún documento. Para cada una verifica que `encontrada_en_contexto` tenga el valor esperado.
 
-### Ejemplo de salida esperada
+### Resultados reales (15/10/2026)
 
-```json
-{
-  "pregunta": "Se me rompió una bisagra del rack a los 4 meses. ¿Está en garantía y cómo hago el reclamo?",
-  "respuesta": "Sí: los herrajes, como las bisagras, tienen 6 meses de garantía...",
-  "encontrada_en_contexto": true,
-  "referencias": [
-    {"fuente": "02-garantia-y-devoluciones.md", "chunk": 1, "score": 0.61, "...": "..."}
-  ]
-}
-```
+Las 4 pruebas dieron el resultado esperado: el sistema respondió con fuentes las preguntas cubiertas por los documentos y dijo *"No lo sé"* en las dos trampa. La salida completa está en [`resultados_demo.md`](./resultados_demo.md).
 
-```json
-{
-  "pregunta": "¿En cuántas cuotas sin interés puedo pagar con tarjeta de crédito?",
-  "respuesta": "No lo sé: esa información no está en la documentación disponible.",
-  "encontrada_en_contexto": false,
-  "referencias": []
-}
-```
+| Pregunta | Tipo | Encontrada | Referencias (score) | Resultado |
+|---|---|---|---|---|
+| Se rompió una bisagra a los 4 meses: ¿está en garantía y cómo reclamo? | en documentos | sí | garantía, chunk 1 (0,47) y chunk 2 (0,46) | OK |
+| ¿Puedo devolver un placar a medida si me arrepiento? | en documentos | sí | garantía, chunk 4 (0,55) | OK |
+| ¿En cuántas cuotas sin interés puedo pagar con tarjeta? | trampa | no | — | OK, "No lo sé" |
+| ¿Cuántos empleados tiene OLA Muebles y quién es el dueño? | trampa | no | — | OK, "No lo sé" |
+
+Respuesta real a la primera pregunta:
+
+> Sí, en principio está en garantía: los herrajes, como las bisagras, tienen 6 meses de cobertura contados desde la fecha de entrega del remito, y tu caso ocurrió a los 4 meses. Para hacer el reclamo, tenés que enviar un correo a info@olamuebles.com con asunto Garantía – número de pedido, incluyendo el número de pedido o comprobante, una descripción del problema y al menos tres fotos [...]
+
+En la segunda pregunta, el modelo además aclaró lo que la documentación **no** cubre ("no aclara si un placard a medida que no sea de la Línea Atelier tendría el mismo tratamiento"), tal como pide la regla 3 del prompt.
