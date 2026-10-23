@@ -10,7 +10,13 @@ y muestra que un error (API key inválida) se devuelve controlado, sin crash.
 import argparse
 import asyncio
 import logging
+import sys
 import time
+
+# La consola de Windows usa cp1252 y no puede imprimir algunos símbolos (✗, —, acentos al redirigir)
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 from manager import AsyncLLMManager
 from schemas import ChatMessage
