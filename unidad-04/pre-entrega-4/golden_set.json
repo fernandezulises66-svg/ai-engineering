@@ -1,0 +1,37 @@
+[
+  {
+    "id": "q1",
+    "pregunta": "¿Qué significa el error ERR-AFIP-102 y cómo se soluciona?",
+    "documento_id_esperado": "integracion-afip",
+    "documentos_relevantes": ["integracion-afip", "codigos-error"],
+    "tipo": "código técnico exacto"
+  },
+  {
+    "id": "q2",
+    "pregunta": "¿Cuánto tiempo puede trabajar un usuario antes de tener que volver a ingresar su contraseña?",
+    "documento_id_esperado": "autenticacion",
+    "documentos_relevantes": ["autenticacion", "codigos-error"],
+    "tipo": "paráfrasis (sin palabras clave del documento)"
+  },
+  {
+    "id": "q3",
+    "pregunta": "¿En qué momento un pedido de la tienda online se transforma en una venta del sistema?",
+    "documento_id_esperado": "tiendanube",
+    "documentos_relevantes": ["tiendanube"],
+    "tipo": "conceptual"
+  },
+  {
+    "id": "q4",
+    "pregunta": "Subí un cambio al backend pero no se ve en producción, ¿qué me faltó hacer?",
+    "documento_id_esperado": "arquitectura",
+    "documentos_relevantes": ["arquitectura"],
+    "tipo": "problema descrito con lenguaje coloquial"
+  },
+  {
+    "id": "q5",
+    "pregunta": "¿Qué quiere decir el código OLA-RIB-0042?",
+    "documento_id_esperado": "inventario",
+    "documentos_relevantes": ["inventario"],
+    "tipo": "nombre propio / identificador"
+  }
+]
