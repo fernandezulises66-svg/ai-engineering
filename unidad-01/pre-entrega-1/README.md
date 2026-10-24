@@ -82,20 +82,24 @@ pytest -v                           # tests offline (sin API keys ni red)
 | `LLM_MAX_TOKENS` | No (por defecto 1024) | Tokens máximos de la respuesta (16 a 32000). |
 | `LLM_MAX_RETRIES` | No (por defecto 2) | Reintentos ante rate limit o errores de red. |
 
-## Ejemplo: error controlado
+## Resultados reales
 
-Con una API key inválida, el programa no se cae (salida real contra la API de Anthropic):
+Probado el 24/10/2026 con ambos proveedores. La salida completa y los logs están en [`resultados_main.md`](./resultados_main.md).
+
+| Prueba | OpenAI (`gpt-6-luna`) | Anthropic (`claude-haiku-5-5`) |
+|---|---|---|
+| Modo normal | OK, al 3.er intento por 2 cortes de red | OK (12,5 s) |
+| Streaming | OK, primer token a los 8,3 s | OK, primer token a los 4,7 s |
+| Key inválida | Error controlado (`timeout`: la red se cortó antes del 401) | Error controlado (`authentication`, 401) |
+
+La red tuvo cortes durante la prueba, y los logs muestran el manejo de errores funcionando en un caso real:
 
 ```
---- 1. Modo normal (generate) ---
-22:29:22 | ERROR   | [anthropic] error controlado: authentication
-✗ Error controlado: authentication — Error code: 401 - {... 'message': 'invalid x-api-key'}
-
---- 2. Streaming (stream con yield) ---
-22:29:22 | ERROR   | [anthropic] stream interrumpido: authentication
-✗ Error controlado: authentication — Error code: 401 - {...}
-
---- 3. Error controlado (API key inválida) ---
-ok=False · tipo=authentication · status=401
-→ El programa sigue funcionando: el error se devolvió como dato, no como excepción.
+11:27:33 | WARNING | [openai] connection (intento 1) → reintento en 1.5s
+11:27:52 | WARNING | [openai] connection (intento 2) → reintento en 2.4s
+11:28:09 | INFO    | [openai] respuesta OK (301 caracteres)
 ```
+
+Respuesta real de Anthropic en modo normal:
+
+> La entropía es una magnitud que mide el grado de desorden o de aleatoriedad de un sistema, y también la cantidad de energía que no puede aprovecharse para producir trabajo. En termodinámica, la segunda ley establece que la entropía de un sistema aislado tiende a aumentar con el tiempo. [...]

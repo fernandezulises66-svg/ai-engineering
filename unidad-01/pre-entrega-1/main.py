@@ -64,8 +64,8 @@ async def probar(provider: str | None) -> None:
     from anthropic import AsyncAnthropic
     from openai import AsyncOpenAI
 
-    fake = (OpenAIClient(cfg, AsyncOpenAI(api_key="sk-invalida", max_retries=0)) if cfg.provider == "openai"
-            else AnthropicClient(cfg, AsyncAnthropic(api_key="sk-ant-invalida", max_retries=0)))
+    fake = (OpenAIClient(cfg, AsyncOpenAI(api_key="sk-invalida", max_retries=0, timeout=cfg.timeout)) if cfg.provider == "openai"
+            else AnthropicClient(cfg, AsyncAnthropic(api_key="sk-ant-invalida", max_retries=0, timeout=cfg.timeout)))
     async with AsyncLLMManager(cfg, client=fake) as roto:
         r = await roto.generate("Hola")
         print(f"ok={r.ok} · tipo={r.error.type if r.error else None} · status={r.error.status_code if r.error else None}")
