@@ -134,3 +134,17 @@ def test_detecta_mismatch_de_dimensiones():
 
     with pytest.raises(SystemExit, match="Mismatch de dimensiones"):
         ensure_index(FakePinecone(existe=True, dimension=768))
+
+
+# --- Prioridad a identificadores exactos -------------------------------------------
+def test_detecta_identificadores_y_los_prioriza(rag):
+    docs = rag.retrieve("¿Qué quiere decir el código OLA-RIB-0042?")  # modo por defecto: hybrid_exact
+    assert docs[0].metadata["doc_id"] == "inventario"
+    assert "OLA-RIB-0042" in docs[0].page_content
+
+
+def test_sin_identificadores_es_igual_al_hibrido(rag):
+    q = "¿Cuándo un pedido de la tienda se convierte en venta?"
+    assert rag.exact_matches(q) == []
+    assert [d.metadata["chunk_id"] for d in rag.retrieve(q)] == \
+           [d.metadata["chunk_id"] for d in rag.retrieve(q, mode="hybrid")]

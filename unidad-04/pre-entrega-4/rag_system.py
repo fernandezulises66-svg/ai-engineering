@@ -20,7 +20,10 @@ import config
 
 logger = logging.getLogger("rag")
 
-Mode = Literal["hybrid", "bm25", "vector"]
+Mode = Literal["hybrid_exact", "hybrid", "bm25", "vector"]
+
+# Identificadores: letras/números unidos por guiones y con al menos un dígito (ERR-AFIP-102, OLA-RIB-0042)
+IDENTIFIER_RE = re.compile(r"\b(?=[A-Za-z0-9-]*\d)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+\b")
 
 STOPWORDS = set("""a al algo como con cual cuando de del desde donde el ella en entre es esa ese esta este hay la las
 le lo los mas me mi no o para pero por que se si sin sobre su sus un una uno y ya qué cómo cuál cuándo dónde
@@ -53,6 +56,7 @@ class RAGSystem:
     def __init__(self, chunks: list[Document], vector_store: VectorStore, k: int = config.TOP_K,
                  candidates: int = config.CANDIDATES_PER_RETRIEVER, weights=config.HYBRID_WEIGHTS):
         self.k = k
+        self.chunks = chunks
         self.bm25 = BM25Retriever.from_documents(chunks, k=candidates, preprocess_func=tokenize)
         self.vector = vector_store.as_retriever(search_kwargs={"k": candidates})
         self.ensemble = EnsembleRetriever(retrievers=[self.bm25, self.vector], weights=list(weights),
@@ -70,17 +74,39 @@ class RAGSystem:
                                     namespace=config.NAMESPACE)
         return cls(chunks, store, **kwargs)
 
-    def retrieve(self, query: str, mode: Mode = "hybrid") -> list[Document]:
+    def exact_matches(self, query: str) -> list[Document]:
+        """Chunks que contienen literalmente algún identificador de la consulta, ordenados por BM25.
+
+        RRF premia el consenso entre recuperadores: un chunk que BM25 pone 1.º pero que
+        la búsqueda vectorial no trae (típico con códigos y SKUs) puede perder contra
+        chunks mediocres que aparecen en las dos listas. Si el usuario escribió un
+        identificador exacto, los chunks que lo contienen tienen prioridad.
+        """
+        identificadores = {i.lower() for i in IDENTIFIER_RE.findall(query)}
+        if not identificadores:
+            return []
+        scores = self.bm25.vectorizer.get_scores(tokenize(query))
+        candidatos = [(score, c) for score, c in zip(scores, self.chunks)
+                      if any(i in c.page_content.lower() for i in identificadores)]
+        return [c for _, c in sorted(candidatos, key=lambda x: -x[0])]
+
+    def retrieve(self, query: str, mode: Mode = "hybrid_exact") -> list[Document]:
         if not query.strip():
             raise ValueError("La consulta está vacía")
-        retriever = {"hybrid": self.ensemble, "bm25": self.bm25, "vector": self.vector}[mode]
-        docs = retriever.invoke(query)[: self.k]
+        if mode == "hybrid_exact":
+            exactos = self.exact_matches(query)
+            ids = {d.metadata["chunk_id"] for d in exactos}
+            docs = (exactos + [d for d in self.ensemble.invoke(query) if d.metadata["chunk_id"] not in ids])[: self.k]
+        else:
+            retriever = {"hybrid": self.ensemble, "bm25": self.bm25, "vector": self.vector}[mode]
+            docs = retriever.invoke(query)[: self.k]
         logger.info("[%s] %s → %s", mode, query[:60], [d.metadata["chunk_id"] for d in docs])
         return docs
 
-    async def aretrieve(self, query: str, mode: Mode = "hybrid") -> list[Document]:
-        retriever = {"hybrid": self.ensemble, "bm25": self.bm25, "vector": self.vector}[mode]
-        return (await retriever.ainvoke(query))[: self.k]
+    async def aretrieve(self, query: str, mode: Mode = "hybrid_exact") -> list[Document]:
+        import asyncio
+
+        return await asyncio.to_thread(self.retrieve, query, mode)  # BM25 es CPU: no bloquea el loop
 
 
 if __name__ == "__main__":

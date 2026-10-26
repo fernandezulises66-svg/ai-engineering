@@ -1,8 +1,9 @@
 """
 Evaluación del recuperador con un Golden Set: Precision@k, Recall@k y MRR,
-comparando BM25, búsqueda vectorial e híbrida.
+comparando BM25, búsqueda vectorial, híbrida (RRF) e híbrida con prioridad a
+coincidencias exactas de identificadores.
 
-    python evaluate.py                 # los 3 modos contra Pinecone
+    python evaluate.py                 # los 4 modos contra Pinecone
     python evaluate.py --modes bm25    # solo BM25 (no necesita Pinecone ni OpenAI)
 
 Definiciones (k = 5, a nivel de documento fuente):
@@ -70,7 +71,8 @@ def max_precision(rag: RAGSystem, golden: list[dict], k: int) -> dict[str, float
 
 
 def print_report(resultados: dict, techo: dict[str, float], k: int) -> None:
-    nombres = {"bm25": "BM25 (léxico)", "vector": "Vectorial (Pinecone)", "hybrid": "Híbrido (RRF)"}
+    nombres = {"bm25": "BM25 (léxico)", "vector": "Vectorial (Pinecone)", "hybrid": "Híbrido (RRF)",
+               "hybrid_exact": "Híbrido + exactos"}
     print(f"\n{'=' * 72}\nREPORTE DE EVALUACIÓN · {len(next(iter(resultados.values()))['detalle'])} preguntas · k = {k}\n{'=' * 72}")
     print(f"{'Recuperador':<24}{'Precision@' + str(k):>14}{'Recall@' + str(k):>12}{'MRR':>10}")
     for mode, r in resultados.items():
@@ -79,19 +81,20 @@ def print_report(resultados: dict, techo: dict[str, float], k: int) -> None:
 
     print("\nDetalle por pregunta (P = precision, R = recall, posición del doc esperado):")
     modos = list(resultados)
-    print(f"{'':<4}" + "".join(f"{nombres[m]:>24}" for m in modos))
+    print(f"{'':<4}" + "".join(f"{nombres[m]:>22}" for m in modos))
     for i, fila in enumerate(resultados[modos[0]]["detalle"]):
         celdas = []
         for m in modos:
             f = resultados[m]["detalle"][i]
             pos = f"#{round(1 / f['rr'])}" if f["rr"] else "—"
             celdas.append(f"P={f['precision']:.1f} R={f['recall']:.0f} {pos:>3}")
-        print(f"{fila['id']:<4}" + "".join(f"{c:>24}" for c in celdas) + f"   {fila['pregunta'][:48]}")
+        print(f"{fila['id']:<4}" + "".join(f"{c:>22}" for c in celdas) + f"   {fila['pregunta'][:40]}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modes", nargs="+", default=["bm25", "vector", "hybrid"], choices=["bm25", "vector", "hybrid"])
+    parser.add_argument("--modes", nargs="+", default=["bm25", "vector", "hybrid", "hybrid_exact"],
+                        choices=["bm25", "vector", "hybrid", "hybrid_exact"])
     args = parser.parse_args()
     logging.getLogger("rag").setLevel(logging.WARNING)
 
