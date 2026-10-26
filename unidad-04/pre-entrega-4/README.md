@@ -16,10 +16,12 @@ INGESTA (setup_index.py + ingest.py)
 
 CONSULTA (rag_system.py · clase RAGSystem)
   query ─┬─► BM25Retriever (chunks locales, tokenizador para español técnico) ─ top 10 ─┐
-         └─► PineconeVectorStore (similitud coseno en el namespace)        ─ top 10 ─┴─► EnsembleRetriever (RRF) ─► top 5
+         └─► PineconeVectorStore (similitud coseno en el namespace)        ─ top 10 ─┴─► EnsembleRetriever (RRF)
+                                                                                          │
+         ¿la consulta trae un identificador (ERR-AFIP-102, OLA-RIB-0042)? ── sí ─► esos chunks primero ─► top 5
 
 EVALUACIÓN (evaluate.py)
-  golden_set.json ─► BM25 vs. vectorial vs. híbrido ─► Precision@5 · Recall@5 · MRR
+  golden_set.json ─► BM25 vs. vectorial vs. híbrido vs. híbrido + exactos ─► Precision@5 · Recall@5 · MRR
 ```
 
 | Archivo | Contenido |
@@ -28,9 +30,9 @@ EVALUACIÓN (evaluate.py)
 | `config.py` | Nombre del índice, namespace, región, modelo de embeddings y su dimensión, parámetros de chunking y de recuperación. |
 | `setup_index.py` | Verifica si el índice existe y lo crea en modo Serverless. Si ya existe, valida que su dimensión coincida con la del modelo. |
 | `ingest.py` | Carga los 3 formatos, divide en chunks y los sube a Pinecone con metadatos y el texto original. |
-| `rag_system.py` | Clase `RAGSystem`: `EnsembleRetriever` que fusiona BM25 y Pinecone y devuelve el top-5. |
+| `rag_system.py` | Clase `RAGSystem`: `EnsembleRetriever` que fusiona BM25 y Pinecone (RRF), con prioridad a identificadores exactos, y devuelve el top-5. |
 | `evaluate.py` + `golden_set.json` | Benchmark de 5 preguntas con su documento fuente conocido y el reporte de métricas. |
-| `tests/test_offline.py` | 13 tests sin API keys (Pinecone falso, embeddings determinísticos). |
+| `tests/test_offline.py` | 15 tests sin API keys (Pinecone falso, embeddings determinísticos). |
 
 ## Decisiones de diseño
 
@@ -69,7 +71,7 @@ copy .env.example .env          # completá PINECONE_API_KEY, OPENAI_API_KEY e I
 python setup_index.py     # crea el índice serverless (1536 dim., coseno, aws/us-east-1) si no existe
 python ingest.py          # sube los chunks al namespace erp-docs-v1
 python rag_system.py "¿Qué significa el error ERR-AFIP-102?"   # una consulta de prueba
-python evaluate.py        # métricas de BM25, vectorial e híbrido
+python evaluate.py        # métricas de BM25, vectorial, híbrido e híbrido + exactos
 pytest -v                 # tests offline
 ```
 
@@ -93,14 +95,33 @@ El golden set tiene 5 preguntas de distinto tipo, con el documento fuente conoci
 - **Precision@5:** proporción de los 5 chunks que vienen de un documento relevante para la pregunta.
 - **MRR:** 1 / posición del primer chunk del documento esperado.
 
-**Techo de Precision@5:** cada documento tiene pocos chunks (el dataset completo tiene 17), así que aunque el recuperador sea perfecto, varias preguntas no pueden llenar los 5 lugares con chunks relevantes. El techo promedio es **0,56**, y `evaluate.py` lo informa para leer la precisión en contexto.
+**Techo de Precision@5:** cada documento tiene pocos chunks (el dataset completo tiene 20), así que aunque el recuperador sea perfecto, varias preguntas no pueden llenar los 5 lugares con chunks relevantes. El techo promedio es **0,64**, y `evaluate.py` lo informa para leer la precisión en contexto.
 
-### Resultados
-
-Línea de base con BM25 solo (`python evaluate.py --modes bm25`, sin Pinecone):
+### Resultados (26/10/2026, Pinecone + OpenAI)
 
 | Recuperador | Precision@5 | Recall@5 | MRR |
 |---|---|---|---|
-| BM25 (léxico) | 0,44 | 1,00 | 0,90 |
+| BM25 (léxico) | 0,40 | 1,00 | 0,90 |
+| Vectorial (Pinecone) | 0,40 | 0,80 | 0,70 |
+| Híbrido (RRF) | **0,48** | **1,00** | 0,74 |
+| **Híbrido + exactos** (modo por defecto de `RAGSystem`) | **0,48** | **1,00** | **0,90** |
 
-*Los resultados de la búsqueda vectorial y la híbrida en Pinecone se completan al correr `evaluate.py` con las keys.*
+El reporte completo de consola, con el detalle por pregunta, está en [`resultados_evaluacion.md`](./resultados_evaluacion.md).
+
+| Pregunta | BM25 | Vectorial | Híbrido (RRF) | Híbrido + exactos |
+|---|---|---|---|---|
+| q1 · ERR-AFIP-102 | #2 | #1 | #2 | #2 |
+| q2 · duración de la sesión (paráfrasis) | #1 | #2 | #1 | #1 |
+| q3 · pedido → venta | #1 | #1 | #1 | #1 |
+| q4 · backend sin reiniciar (coloquial) | #1 | #1 | #1 | #1 |
+| q5 · OLA-RIB-0042 | #1 | **no aparece** | #5 | **#1** |
+
+*Posición del primer chunk del documento esperado. En q1, el puesto 1 lo ocupa el catálogo de códigos de error, que también es relevante (por eso la precisión es 0,8).*
+
+### Análisis
+
+- **Cada recuperador tiene un punto ciego.** La búsqueda vectorial no encuentra el SKU `OLA-RIB-0042` (q5): un código arbitrario no tiene un "significado" que el modelo de embeddings haya aprendido. BM25 lo encuentra al instante, pero en la paráfrasis de q2 trae menos chunks útiles (precisión 0,4 contra 0,6 de la vectorial).
+- **El híbrido mejora la precisión** (0,48 contra 0,40 de cada uno por separado) porque combina lo mejor de ambos: en q2 y q3 suma chunks relevantes que uno solo no traía.
+- **Pero RRF premia el consenso.** Un chunk que BM25 pone 1.º y la búsqueda vectorial no trae suma 0,5/61 ≈ 0,008. Uno que está 3.º y 5.º en las dos listas suma 0,5/63 + 0,5/65 ≈ 0,016. En q5, eso empujó al documento correcto al puesto 5 (y en una primera corrida, afuera del top-5).
+- **La corrección: prioridad a identificadores exactos.** Si la consulta contiene un código (letras y números unidos por guiones, con al menos un dígito), los chunks que lo contienen literalmente van primero y después sigue el ranking híbrido. Sin identificadores, el resultado es idéntico al híbrido puro (hay un test que lo verifica). Con esto, el MRR sube de 0,74 a 0,90 y q5 queda en el puesto 1 de forma estable.
+- **Limitación:** son 5 preguntas, así que cada una mueve las métricas un 20 %. Las conclusiones sirven para entender el comportamiento, no como estadística. El siguiente paso sería ampliar el golden set a 30 o 50 preguntas.
