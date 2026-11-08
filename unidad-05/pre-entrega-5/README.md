@@ -80,4 +80,24 @@ La base `erp_demo.db` se crea sola la primera vez.
 
 La traza completa está en [`trazas/traza_ejemplo.json`](./trazas/traza_ejemplo.json) (estructurada) y [`trazas/traza_ejemplo.log`](./trazas/traza_ejemplo.log) (legible).
 
-*Se genera al correr `python demo.py` con una API key.*
+Resultado de la corrida real (Anthropic `claude-haiku-5-5`, `recursion_limit=10`):
+
+| Turno | Herramientas usadas | Resultado |
+|---|---|---|
+| 1 | `buscar_cliente` → `buscar_pedidos` | 3 pedidos, total $14.500 |
+| 2 | `detalle_pedido(5042)` | Resolvió "el último" con el contexto del turno 1 |
+| 3 | `buscar_cliente("Martín Gómez")` → error → `buscar_cliente("Gómez")` | Reintentó según la sugerencia y, con 2 candidatos, pidió aclaración |
+| 4 | `buscar_pedidos(103)` | Joaquín Gómez (Gonnet): $980 |
+| 5 | ninguna | Tras reabrir el checkpointer, recordó a Martina Gómez y su pedido 5042 desde SQLite |
+
+Fragmento del turno 3 (ciclo de retorno):
+
+```
+[thread reintento-bb5b3e] Usuario: "Necesito saber cuánto compró Martín Gómez."
+  → El agente decide usar la herramienta: buscar_cliente(nombre='Martín Gómez')
+  → La herramienta devuelve: {"clientes": [], "error": "No hay clientes que coincidan con 'Martín Gómez'.", "sugerencia": "Reintentá buscando solo por el apellido o revisá la ortografía."}
+  → El agente decide usar la herramienta: buscar_cliente(nombre='Gómez')
+  → La herramienta devuelve: {"clientes": [{"cliente_id": 102, "nombre": "Martina Gómez", ...}, {"cliente_id": 103, "nombre": "Joaquín Gómez", ...}], "cantidad": 2}
+  Respuesta: "No encontré un cliente llamado exactamente "Martín Gómez", pero hay dos Gómez en el ERP: ... ¿Cuál de los dos es el que buscás?"
+  (llamadas a herramientas en este turno: 2)
+```

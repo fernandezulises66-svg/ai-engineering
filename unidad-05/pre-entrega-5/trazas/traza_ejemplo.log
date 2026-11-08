@@ -1,0 +1,51 @@
+### Escenario: multi-paso + memoria
+[thread clientes-bb5b3e] Usuario: "¿Cuántos pedidos tuvo Martina Gómez y cuál fue el total?"
+  → El agente decide usar la herramienta: buscar_cliente(nombre='Martina Gómez')
+  → La herramienta devuelve: {"clientes": [{"cliente_id": 102, "nombre": "Martina Gómez", "localidad": "City Bell"}], "cantidad": 1}
+  → El agente decide usar la herramienta: buscar_pedidos(cliente_id=102)
+  → La herramienta devuelve: {"cliente_id": 102, "cliente": "Martina Gómez", "cantidad": 3, "total": 14500.0, "pedidos": [{"pedido_id": 5001, "fecha": "2026-06-14", "estado": "entregado", "total": 4200.0}, {"pedido_id": 5017, "fecha": "2026-08-02", "estado": "entregado", "total": 3800.0}, {"pedido_id": 5042, "fecha": "2026-10-21", "estado": "en_fabricacion", "total": 6500.0}], "ultimo_pedido_id": 5042}
+  Respuesta: "Martina Gómez (City Bell) tiene 3 pedidos, por un total de $14.500."
+  (llamadas a herramientas en este turno: 2)
+
+### Escenario: multi-paso + memoria
+[thread clientes-bb5b3e] Usuario: "¿Y el último?"
+  → El agente decide usar la herramienta: detalle_pedido(pedido_id=5042)
+  → La herramienta devuelve: {"pedido_id": 5042, "fecha": "2026-10-21", "estado": "en_fabricacion", "total": 6500.0, "cliente": "Martina Gómez", "items": [{"sku": "OLA-ATL-0115", "descripcion": "Biblioteca a medida roble americano", "cantidad": 1, "precio_unitario": 5900.0}, {"sku": "OLA-OUT-0003", "descripcion": "Kit de mantenimiento (aceite + paño)", "cantidad": 2, "precio_unitario": 300.0}]}
+  Respuesta: "El último pedido es el 5042, del 21/10/2026, en fabricación. Incluye:
+
+- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900
+- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u
+
+Total: $6.500."
+  (llamadas a herramientas en este turno: 1)
+
+### Escenario: ciclo de retorno (reintento + aclaración)
+[thread reintento-bb5b3e] Usuario: "Necesito saber cuánto compró Martín Gómez."
+  → El agente decide usar la herramienta: buscar_cliente(nombre='Martín Gómez')
+  → La herramienta devuelve: {"clientes": [], "error": "No hay clientes que coincidan con 'Martín Gómez'.", "sugerencia": "Reintentá buscando solo por el apellido o revisá la ortografía."}
+  → El agente decide usar la herramienta: buscar_cliente(nombre='Gómez')
+  → La herramienta devuelve: {"clientes": [{"cliente_id": 102, "nombre": "Martina Gómez", "localidad": "City Bell"}, {"cliente_id": 103, "nombre": "Joaquín Gómez", "localidad": "Gonnet"}], "cantidad": 2}
+  Respuesta: "No encontré un cliente llamado exactamente "Martín Gómez", pero hay dos Gómez en el ERP:
+
+1. **Martina Gómez** (City Bell)
+2. **Joaquín Gómez** (Gonnet)
+
+¿Cuál de los dos es el que buscás?"
+  (llamadas a herramientas en este turno: 2)
+
+### Escenario: ciclo de retorno (reintento + aclaración)
+[thread reintento-bb5b3e] Usuario: "El de Gonnet."
+  → El agente decide usar la herramienta: buscar_pedidos(cliente_id=103)
+  → La herramienta devuelve: {"cliente_id": 103, "cliente": "Joaquín Gómez", "cantidad": 1, "total": 980.0, "pedidos": [{"pedido_id": 5008, "fecha": "2026-07-01", "estado": "entregado", "total": 980.0}], "ultimo_pedido_id": 5008}
+  Respuesta: "Joaquín Gómez (Gonnet) compró en total **$980**. Tiene un único pedido (#5008, del 1 de julio de 2026, entregado)."
+  (llamadas a herramientas en este turno: 1)
+
+### Escenario: persistencia tras reiniciar el checkpointer
+[thread clientes-bb5b3e] Usuario: "Retomando lo de antes: ¿de qué cliente estábamos hablando y qué incluía su último pedido?"
+  Respuesta: "Estábamos hablando de Martina Gómez (City Bell). Su último pedido es el 5042 (21/10/2026, en fabricación) e incluye:
+
+- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900
+- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u
+
+Total: $6.500."
+  (llamadas a herramientas en este turno: 0)

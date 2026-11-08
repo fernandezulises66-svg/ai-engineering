@@ -1,0 +1,232 @@
+{
+  "generada": "2026-11-08T16:33:13",
+  "proveedor": "anthropic",
+  "recursion_limit": 10,
+  "duracion_segundos": 11.1,
+  "turnos": [
+    {
+      "escenario": "multi-paso + memoria",
+      "thread_id": "clientes-bb5b3e",
+      "usuario": "¿Cuántos pedidos tuvo Martina Gómez y cuál fue el total?",
+      "pasos": [
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "buscar_cliente",
+          "argumentos": {
+            "nombre": "Martina Gómez"
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "buscar_cliente",
+          "resultado": {
+            "clientes": [
+              {
+                "cliente_id": 102,
+                "nombre": "Martina Gómez",
+                "localidad": "City Bell"
+              }
+            ],
+            "cantidad": 1
+          }
+        },
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "buscar_pedidos",
+          "argumentos": {
+            "cliente_id": 102
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "buscar_pedidos",
+          "resultado": {
+            "cliente_id": 102,
+            "cliente": "Martina Gómez",
+            "cantidad": 3,
+            "total": 14500.0,
+            "pedidos": [
+              {
+                "pedido_id": 5001,
+                "fecha": "2026-06-14",
+                "estado": "entregado",
+                "total": 4200.0
+              },
+              {
+                "pedido_id": 5017,
+                "fecha": "2026-08-02",
+                "estado": "entregado",
+                "total": 3800.0
+              },
+              {
+                "pedido_id": 5042,
+                "fecha": "2026-10-21",
+                "estado": "en_fabricacion",
+                "total": 6500.0
+              }
+            ],
+            "ultimo_pedido_id": 5042
+          }
+        },
+        {
+          "tipo": "respuesta",
+          "texto": "Martina Gómez (City Bell) tiene 3 pedidos, por un total de $14.500."
+        }
+      ],
+      "respuesta": "Martina Gómez (City Bell) tiene 3 pedidos, por un total de $14.500.",
+      "llamadas_a_herramientas": 2
+    },
+    {
+      "escenario": "multi-paso + memoria",
+      "thread_id": "clientes-bb5b3e",
+      "usuario": "¿Y el último?",
+      "pasos": [
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "detalle_pedido",
+          "argumentos": {
+            "pedido_id": 5042
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "detalle_pedido",
+          "resultado": {
+            "pedido_id": 5042,
+            "fecha": "2026-10-21",
+            "estado": "en_fabricacion",
+            "total": 6500.0,
+            "cliente": "Martina Gómez",
+            "items": [
+              {
+                "sku": "OLA-ATL-0115",
+                "descripcion": "Biblioteca a medida roble americano",
+                "cantidad": 1,
+                "precio_unitario": 5900.0
+              },
+              {
+                "sku": "OLA-OUT-0003",
+                "descripcion": "Kit de mantenimiento (aceite + paño)",
+                "cantidad": 2,
+                "precio_unitario": 300.0
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "respuesta",
+          "texto": "El último pedido es el 5042, del 21/10/2026, en fabricación. Incluye:\n\n- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900\n- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u\n\nTotal: $6.500."
+        }
+      ],
+      "respuesta": "El último pedido es el 5042, del 21/10/2026, en fabricación. Incluye:\n\n- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900\n- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u\n\nTotal: $6.500.",
+      "llamadas_a_herramientas": 1
+    },
+    {
+      "escenario": "ciclo de retorno (reintento + aclaración)",
+      "thread_id": "reintento-bb5b3e",
+      "usuario": "Necesito saber cuánto compró Martín Gómez.",
+      "pasos": [
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "buscar_cliente",
+          "argumentos": {
+            "nombre": "Martín Gómez"
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "buscar_cliente",
+          "resultado": {
+            "clientes": [],
+            "error": "No hay clientes que coincidan con 'Martín Gómez'.",
+            "sugerencia": "Reintentá buscando solo por el apellido o revisá la ortografía."
+          }
+        },
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "buscar_cliente",
+          "argumentos": {
+            "nombre": "Gómez"
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "buscar_cliente",
+          "resultado": {
+            "clientes": [
+              {
+                "cliente_id": 102,
+                "nombre": "Martina Gómez",
+                "localidad": "City Bell"
+              },
+              {
+                "cliente_id": 103,
+                "nombre": "Joaquín Gómez",
+                "localidad": "Gonnet"
+              }
+            ],
+            "cantidad": 2
+          }
+        },
+        {
+          "tipo": "respuesta",
+          "texto": "No encontré un cliente llamado exactamente \"Martín Gómez\", pero hay dos Gómez en el ERP:\n\n1. **Martina Gómez** (City Bell)\n2. **Joaquín Gómez** (Gonnet)\n\n¿Cuál de los dos es el que buscás?"
+        }
+      ],
+      "respuesta": "No encontré un cliente llamado exactamente \"Martín Gómez\", pero hay dos Gómez en el ERP:\n\n1. **Martina Gómez** (City Bell)\n2. **Joaquín Gómez** (Gonnet)\n\n¿Cuál de los dos es el que buscás?",
+      "llamadas_a_herramientas": 2
+    },
+    {
+      "escenario": "ciclo de retorno (reintento + aclaración)",
+      "thread_id": "reintento-bb5b3e",
+      "usuario": "El de Gonnet.",
+      "pasos": [
+        {
+          "tipo": "decision_herramienta",
+          "herramienta": "buscar_pedidos",
+          "argumentos": {
+            "cliente_id": 103
+          }
+        },
+        {
+          "tipo": "resultado_herramienta",
+          "herramienta": "buscar_pedidos",
+          "resultado": {
+            "cliente_id": 103,
+            "cliente": "Joaquín Gómez",
+            "cantidad": 1,
+            "total": 980.0,
+            "pedidos": [
+              {
+                "pedido_id": 5008,
+                "fecha": "2026-07-01",
+                "estado": "entregado",
+                "total": 980.0
+              }
+            ],
+            "ultimo_pedido_id": 5008
+          }
+        },
+        {
+          "tipo": "respuesta",
+          "texto": "Joaquín Gómez (Gonnet) compró en total **$980**. Tiene un único pedido (#5008, del 1 de julio de 2026, entregado)."
+        }
+      ],
+      "respuesta": "Joaquín Gómez (Gonnet) compró en total **$980**. Tiene un único pedido (#5008, del 1 de julio de 2026, entregado).",
+      "llamadas_a_herramientas": 1
+    },
+    {
+      "escenario": "persistencia tras reiniciar el checkpointer",
+      "thread_id": "clientes-bb5b3e",
+      "usuario": "Retomando lo de antes: ¿de qué cliente estábamos hablando y qué incluía su último pedido?",
+      "pasos": [
+        {
+          "tipo": "respuesta",
+          "texto": "Estábamos hablando de Martina Gómez (City Bell). Su último pedido es el 5042 (21/10/2026, en fabricación) e incluye:\n\n- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900\n- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u\n\nTotal: $6.500."
+        }
+      ],
+      "respuesta": "Estábamos hablando de Martina Gómez (City Bell). Su último pedido es el 5042 (21/10/2026, en fabricación) e incluye:\n\n- 1 × Biblioteca a medida roble americano (OLA-ATL-0115): $5.900\n- 2 × Kit de mantenimiento aceite + paño (OLA-OUT-0003): $300 c/u\n\nTotal: $6.500.",
+      "llamadas_a_herramientas": 0
+    }
+  ]
+}
