@@ -41,7 +41,7 @@ Lo genera `graph.get_graph().draw_mermaid()`; también está como imagen en [`gr
 | [`knowledge.py`](./knowledge.py) | Base de conocimiento. Puede ser Pinecone (pre-entrega 4) o BM25 local sobre los mismos archivos del manual. |
 | [`runner.py`](./runner.py) / [`main.py`](./main.py) | Ejecución paso a paso con `astream` y guardado de la traza. |
 | [`demo.ipynb`](./demo.ipynb) | **Notebook de demostración** del flujo de delegación. |
-| [`tests/test_offline.py`](./tests/test_offline.py) | 10 tests sin API keys. Usan modelos "guionados" por rol con el grafo, el supervisor y las herramientas reales. |
+| [`tests/test_offline.py`](./tests/test_offline.py) | 11 tests sin API keys. Usan modelos "guionados" por rol con el grafo, el supervisor y las herramientas reales. |
 
 ## Por qué una topología jerárquica
 

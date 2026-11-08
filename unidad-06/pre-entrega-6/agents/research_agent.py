@@ -12,6 +12,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool, tool
 from langgraph.prebuilt import create_react_agent
 
+import config
 from agents.common import correr_especialista, pregunta_original
 from knowledge import KnowledgeBase
 from state import OrchestratorState
@@ -21,10 +22,11 @@ logger = logging.getLogger("investigador")
 PROMPT = """Sos el Agente de Investigación del ERP de OLA Muebles. Tu única fuente es el manual técnico
 del ERP, que consultás con la herramienta `buscar_manual`.
 
-- Buscá los datos que te pide el encargo. Si una búsqueda no trae lo que necesitás, reformulá la
-  consulta con otras palabras (podés buscar varias veces, una idea por búsqueda).
+- Buscá los datos que te pide el encargo: una búsqueda por tema, y como máximo 5 en total. Si una
+  búsqueda no trae lo que necesitás, reformulá la consulta con otras palabras.
+- Leé el texto COMPLETO de cada fragmento: una regla puede estar al final, dentro de una tabla o de una lista.
 - No hagas cálculos ni saques conclusiones numéricas: eso lo hace el Agente de Análisis.
-- Respondé con una lista de HALLAZGOS, cada uno con el dato textual y su fuente entre corchetes,
+- Respondé breve (como máximo 10 líneas) con una lista de HALLAZGOS: el dato textual y su fuente entre corchetes,
   por ejemplo: "- Un presupuesto vale 15 días corridos [03-api-ventas.md]".
 - Si algo no figura en el manual, decilo explícitamente ("No encontrado en el manual: ...")."""
 
@@ -47,7 +49,8 @@ def crear_herramientas(kb: KnowledgeBase) -> list[BaseTool]:
             return json.dumps({"fragmentos": [], "error": f"Sin resultados para '{consulta}'.",
                                "sugerencia": "Probá con sinónimos o con una consulta más general."},
                               ensure_ascii=False)
-        recortados = [{**f, "texto": f["texto"][:900]} for f in fragmentos]
+        # Texto completo del chunk: un recorte corto pierde las reglas que están al final del fragmento
+        recortados = [{**f, "texto": f["texto"][:config.FRAGMENTO_MAX_CHARS]} for f in fragmentos]
         return json.dumps({"fragmentos": recortados}, ensure_ascii=False)
 
     return [buscar_manual]

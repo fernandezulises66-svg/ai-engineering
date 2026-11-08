@@ -13,7 +13,17 @@ def texto_de(msg: BaseMessage) -> str:
     """Texto plano de un mensaje (Anthropic puede devolver una lista de bloques)."""
     if isinstance(msg.content, str):
         return msg.content
-    return "".join(b.get("text", "") for b in msg.content if isinstance(b, dict) and b.get("type") == "text")
+    return "".join(b if isinstance(b, str) else b.get("text", "") for b in msg.content
+                   if isinstance(b, str) or (isinstance(b, dict) and b.get("type") == "text"))
+
+
+def diagnostico(msg: BaseMessage) -> dict:
+    """Metadatos de la respuesta del modelo (motivo de corte, tipos de bloque) para la traza."""
+    bloques = ["str"] if isinstance(msg.content, str) else [
+        b if isinstance(b, str) else b.get("type", "?") for b in msg.content]
+    meta = getattr(msg, "response_metadata", {}) or {}
+    return {"stop_reason": meta.get("stop_reason") or meta.get("finish_reason"), "bloques": bloques,
+            "caracteres": len(texto_de(msg))}
 
 
 def parse_json(contenido: Any) -> Any:

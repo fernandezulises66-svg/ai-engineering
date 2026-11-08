@@ -30,7 +30,8 @@ INDEX_NAME = os.getenv("INDEX_NAME", "ola-erp-docs")
 PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "erp-docs-v1")
 EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 MANUAL_DIR = Path(os.getenv("MANUAL_DIR", BASE_DIR.parent.parent / "unidad-04" / "pre-entrega-4" / "data"))
-TOP_K = 4
+TOP_K = 3                         # fragmentos por búsqueda (cada chunk de la PE4 tiene ~2.000 caracteres)
+FRAGMENTO_MAX_CHARS = 3000        # no recortar de más: una regla puede estar al final del chunk
 
 # --- Límites del flujo (evitan el "supervisor infinito") ------------------------------
 MAX_DELEGACIONES = int(os.getenv("MAX_DELEGACIONES", "6"))   # veces que el supervisor puede delegar en total
@@ -44,7 +45,7 @@ for ruidoso in ("httpx", "httpx2", "anthropic", "openai", "pinecone", "urllib3")
     logging.getLogger(ruidoso).setLevel(logging.WARNING)
 
 
-def get_llm(max_tokens: int = 1024) -> BaseChatModel:
+def get_llm(max_tokens: int = 2048) -> BaseChatModel:
     """Devuelve el chat model configurado (Anthropic por defecto, u OpenAI)."""
     if LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI

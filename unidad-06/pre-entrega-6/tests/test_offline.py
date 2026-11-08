@@ -188,3 +188,16 @@ def test_diagrama_del_grafo():
     for nodo in ("supervisor", "investigador", "analista", "sintetizador"):
         assert nodo in mermaid
     assert "-.->" in mermaid   # aristas condicionales desde el supervisor
+
+
+def test_busqueda_no_recorta_reglas_al_final_del_fragmento():
+    # Regresión de la primera corrida real: los chunks de la PE4 tienen ~2.000 caracteres y la regla
+    # de la seña estaba en la posición ~1.500; recortar a 900 caracteres la hacía "desaparecer".
+    class KBLarga:
+        async def buscar(self, consulta, k=3):
+            return [{"fuente": "03-api-ventas.md", "titulo": "API de ventas", "score": 0.8,
+                     "texto": "x" * 1500 + " Las ventas de muebles a medida requieren cobrar el 50 % de seña."}]
+
+    buscar = crear_herramientas(KBLarga())[0]
+    resultado = json.loads(asyncio.run(buscar.ainvoke({"consulta": "seña"})))
+    assert "50 % de seña" in resultado["fragmentos"][0]["texto"]

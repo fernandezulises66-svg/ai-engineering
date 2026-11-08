@@ -45,3 +45,4 @@ class OrchestratorState(MessagesState):
     delegaciones: int           # contador de pasos (condición de parada)
     task_completed: bool
     respuesta_final: str
+    diagnostico_sintesis: dict  # stop_reason y bloques de la respuesta final (para depurar)
