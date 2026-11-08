@@ -1,0 +1,4 @@
+.venv/
+checkpoints.sqlite
+erp_demo.db
+*_salida.txt
