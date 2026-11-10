@@ -39,8 +39,10 @@ def init_observability() -> bool:
         from openinference.instrumentation.langchain import LangChainInstrumentor
         from phoenix.otel import register
 
+        # set_global_tracer_provider=False: si el provider es global, FastAPI (las versiones nuevas traen telemetría
+        # propia) traza cada GET /tasks/{id} del polling y llena Phoenix de trazas HTTP que no son del agente.
         provider = register(project_name=config.PHOENIX_PROJECT, endpoint=config.PHOENIX_ENDPOINT,
-                            batch=True, verbose=False)
+                            batch=True, verbose=False, set_global_tracer_provider=False)
         LangChainInstrumentor().instrument(tracer_provider=provider)
         _tracer = provider.get_tracer("ola-erp-api")
         logger.info("Trazas → Phoenix %s (proyecto '%s')", config.PHOENIX_ENDPOINT, config.PHOENIX_PROJECT)
