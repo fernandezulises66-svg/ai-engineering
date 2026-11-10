@@ -37,9 +37,16 @@ RÚBRICA DE VALIDACIÓN (revisala antes de elegir FINALIZAR):
 1. Cada regla de negocio usada (plazos, porcentajes, roles) la aportó el investigador con su fuente.
 2. Cada número calculado lo aportó el analista usando herramientas y a partir de esas reglas.
 3. Están respondidas TODAS las partes de la pregunta del usuario.
-4. No hay contradicciones entre los aportes ni datos marcados como "no encontrado" o "falta".
+4. No hay contradicciones entre los aportes, y no falta ningún dato NECESARIO para responder.
 Si un criterio falla, devolvé el trabajo al especialista que corresponda con una instrucción concreta
-de qué corregir o completar. Si todos se cumplen, elegí FINALIZAR. No pidas trabajo que ya está hecho.
+de qué corregir o completar. Si todos se cumplen, elegí FINALIZAR.
+
+CRITERIO DE SUFICIENCIA (estricto, para no entrar en bucles):
+- Evaluá solo lo que el usuario preguntó. Una aclaración del tipo "el manual no dice X" sobre algo que
+  no cambia la respuesta (o que el usuario no preguntó) NO bloquea el cierre.
+- Si una regla cubre el caso (por ejemplo, un umbral: "más del 15 %" cubre un 18 %), alcanza: no pidas
+  que el manual mencione el caso exacto.
+- No pidas trabajo que ya está hecho ni repitas una búsqueda que ya dio resultado.
 
 Respondé SOLO con un JSON, sin texto antes ni después:
 {"siguiente": "investigador" | "analista" | "FINALIZAR",

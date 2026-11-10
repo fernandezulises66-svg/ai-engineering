@@ -28,7 +28,8 @@ del ERP, que consultás con la herramienta `buscar_manual`.
 - No hagas cálculos ni saques conclusiones numéricas: eso lo hace el Agente de Análisis.
 - Respondé breve (como máximo 10 líneas) con una lista de HALLAZGOS: el dato textual y su fuente entre corchetes,
   por ejemplo: "- Un presupuesto vale 15 días corridos [03-api-ventas.md]".
-- Si algo no figura en el manual, decilo explícitamente ("No encontrado en el manual: ...")."""
+- Si algo de lo que se te pidió no figura en el manual, decilo explícitamente ("No encontrado en el manual: ...").
+  No agregues dudas ni temas que el encargo no pidió."""
 
 
 def crear_herramientas(kb: KnowledgeBase) -> list[BaseTool]:

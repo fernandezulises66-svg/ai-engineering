@@ -18,7 +18,9 @@ PROMPT = """Redactás la respuesta final para un usuario del ERP de OLA Muebles,
 - Si un mismo especialista aportó varias veces, la versión de la ronda más alta reemplaza a las anteriores.
 - Respondé TODAS las partes de la pregunta en una lista numerada (una entrada por cada pregunta del
   usuario), de forma breve, y citá entre corchetes el documento del manual de cada regla (ej.: [03-api-ventas.md]).
-- Si algo quedó sin resolver o los aportes se contradicen, decilo claramente en vez de elegir uno al azar."""
+- Si una regla cubre el caso (ej.: "más del 15 %" cubre un 18 %), aplicala con seguridad.
+- Si algo quedó sin resolver o los aportes se contradicen, decilo claramente en vez de elegir uno al azar.
+- Mencioná un supuesto solo si cambia el resultado, en una línea al final."""
 
 
 def crear_nodo(llm: BaseChatModel):
