@@ -11,6 +11,7 @@ Entregas y ejercicios del curso de AI Engineering.
 | 5 | Agentes con LangGraph · Pre-entrega 5 (ReAct + memoria persistente) | [unidad-05](./unidad-05) |
 | 6 | Sistemas multi-agente · Pre-entrega 6 (orquestador jerárquico con supervisor) | [unidad-06](./unidad-06) |
 | 7 | LLMOps · Pre-entrega 7 (API FastAPI + Redis + Phoenix + HITL) | [unidad-07](./unidad-07) |
+| 8 | Entrega final · Sistema Intelligence (repo propio) | [ola-erp-intelligence](https://github.com/fernandezulises66-svg/ola-erp-intelligence) |
 
 ## Requisitos
 
