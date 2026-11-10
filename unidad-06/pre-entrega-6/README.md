@@ -138,4 +138,24 @@ Primero hay que **investigar** cuánto vale un presupuesto, qué seña llevan lo
 
 El notebook [`demo.ipynb`](./demo.ipynb) muestra la ejecución paso a paso. La traza completa queda en [`trazas/traza_ejemplo.json`](./trazas/traza_ejemplo.json) y [`.log`](./trazas/traza_ejemplo.log).
 
-*Se completa con la corrida real.*
+### Resultado de las corridas reales
+
+Con Anthropic `claude-haiku-5-5` y el índice de Pinecone de la PE4:
+
+**Corrida del notebook** ([`demo.ipynb`](./demo.ipynb), traza en [`trazas/traza_ejemplo.json`](./trazas/traza_ejemplo.json) y [`.log`](./trazas/traza_ejemplo.log)). Es el recorrido ideal, en 30,6 s:
+
+`supervisor → investigador → supervisor → analista → supervisor → sintetizador → END`
+
+| Ronda | Decide el supervisor | Qué aporta el especialista |
+|---|---|---|
+| 1 | investigador | 4 búsquedas (`buscar_manual`): validez de 15 días corridos y seña del 50 % [03-api-ventas.md]; descuentos de más del 15 % los aprueba `gerencia` [02-autenticacion-y-roles.md] |
+| 2 | analista | `dias_entre_fechas`, `sumar_dias`, `aplicar_porcentaje` ×2 y `calcular`: 13 días, vence el 12/11/2026, $967.600 y seña de $483.800 |
+| 3 | sintetizador | La rúbrica se cumple: respuesta final con las 3 partes y sus fuentes |
+
+**Corrida por consola** (`python main.py`, traza en [`trazas/traza_refinamiento.log`](./trazas/traza_refinamiento.log)). Muestra la supervisión en acción:
+
+- En la ronda 2, el supervisor **devuelve el trabajo al investigador** para que busque sobre qué monto se calcula la seña. El investigador confirma que el manual no lo define.
+- El supervisor no vuelve a pedir esa búsqueda: le encarga al analista calcular **los dos escenarios**, $483.800 sobre el precio con descuento y $590.000 sobre el de lista.
+- En la ronda 4, el supervisor **resuelve un conflicto**: el analista dijo que faltaba el rol aprobador, pero el supervisor verifica en la pizarra que el investigador ya lo había aportado con su fuente en la ronda 1, y cierra.
+
+**Una corrida anterior** reveló un bug: la herramienta recortaba cada fragmento a 900 caracteres y las reglas de la seña y de los descuentos quedaban afuera. El orquestador reaccionó bien: el analista marcó los datos faltantes en vez de inventarlos, y el tope de revisiones cortó el ciclo. Se corrigió y se agregó un test de regresión (`test_busqueda_no_recorta_reglas_al_final_del_fragmento`).

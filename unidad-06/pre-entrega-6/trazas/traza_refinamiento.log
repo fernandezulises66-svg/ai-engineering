@@ -1,0 +1,46 @@
+Pregunta: Hoy es 10/11/2026. Un cliente pidió el 28/10/2026 un presupuesto por una biblioteca a medida de $1.180.000 y quiere confirmarlo con un 18 % de descuento. Según el manual del ERP: ¿el presupuesto sigue vigente?, ¿cuánto queda el precio con el descuento y cuánto tiene que pagar de seña?, ¿qué rol puede aprobar ese descuento?
+
+[SUPERVISOR · ronda 1] → investigador (llm): Todavía no hay contribuciones, y para responder las tres partes de la pregunta hacen falta primero las reglas de negocio con su fuente.
+    instrucción: Buscá en el manual técnico del ERP: (1) el plazo de vigencia de un presupuesto de venta a medida y cómo se calcula desde su fecha de emisión; (2) el porcentaje de seña requerido para confirmar un pedido a medida, y sobre qué base se calcula; (3) qué roles pueden aprobar descuentos y hasta qué porcentaje. Indicá la fuente exacta (sección o página) de cada regla.
+
+[INVESTIGADOR] herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 06-inventario.md, 07-integracion-tiendanube.md, 08-codigos-de-error.json
+    - **(1) Vigencia del presupuesto:** "Crea un presupuesto. Validez: 15 días corridos" [03-api-ventas.md, sección "Endpoints principales", fila `POST /api/presupuestos`]. El error VTA-410-PRES indica que vence con "más de 15 días corridos" [03-api-ventas.md, sección "Errores de la API de ventas"; 08-codigos-de-error.json, catálogo Ventas]. No encontrado en el manual: cómo se cuenta el día de emisión (si cuenta como día 1 o no) y cualquier fórmula de cálculo desde la fecha de emisión.
+    - **(2) Seña para pedido a medida:** "Las ventas de muebles a medida se crean siempre con `seña` y requieren cobr […]
+
+[SUPERVISOR · ronda 2] → investigador (llm): Falta un dato necesario para responder cuánto debe pagar de seña (la base del 50 %), mientras que la vigencia (13 días transcurridos, dentro de 15 corridos) y la aprobación (18 % > 15 %, solo gerencia) ya están cubiertas por reglas con fuente.
+    instrucción: Buscá en el manual, incluyendo archivos no consultados como pedidos o ventas (por ejemplo 04 o 05 si existen), la base de cálculo de la seña del 50 % para pedidos a medida: si se calcula sobre el precio total de lista o sobre el precio con descuento aplicado. Incluí la sección exacta y la cita textual. Si no aparece nada, confirmalo explícitamente.
+
+[INVESTIGADOR] herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 03-api-ventas.md, 07-integracion-tiendanube.md, 08-codigos-de-error.json
+    - No encontrado en el manual: la base de cálculo de la seña del 50 % (precio total de lista o precio con descuento aplicado). Ninguno de los fragmentos recuperados la define.
+    - Lo único que dice el manual sobre la seña: "Las ventas de muebles a medida se crean siempre con `seña` y requieren cobrar el 50 % al confirmar." [03-api-ventas.md, sección "Cuerpo de una venta"]
+    - No apareció ningún archivo 04 ni 05 con pedidos o ventas a medida. Los fragmentos recuperados vinieron de 03-api-ventas.md, 07-integracion-tiendanube.md y 08-codigos-de-error.json.
+    - Búsquedas realizadas (5): seña 50 % base de […]
+
+[SUPERVISOR · ronda 3] → analista (llm): Faltan los cálculos numéricos (vigencia, precio con descuento y seña) que solo puede hacer el analista; la base de la seña no apareció tras cinco búsquedas, así que no conviene repetir la búsqueda y hay que dejarla explícita en la respuesta final.
+    instrucción: Con los datos del investigador, calculá con herramientas: (a) días corridos entre la emisión (28/10/2026) y hoy (10/11/2026), y si queda dentro del plazo de 15 días corridos, indicando que el resultado es el mismo contando o no el día de emisión; (b) precio con 18 % de descuento sobre $1.180.000; (c) seña del 50 % en los dos escenarios posibles: sobre el precio de lista ($1.180.000) y sobre el precio con descuento. Señalá que la base de cálculo de la seña no está definida en el manual y que el resultado depende de ella.
+
+[ANALISTA] herramientas: dias_entre_fechas, sumar_dias, aplicar_porcentaje, aplicar_porcentaje, aplicar_porcentaje, calcular
+    ## Resultados del Agente de Análisis
+    
+    **(a) Vigencia del presupuesto**
+    - Días corridos entre emisión (28/10/2026) y hoy (10/11/2026): **13 días** (herramienta `dias_entre_fechas`).
+    - Plazo de 15 días corridos: vence el **12/11/2026** (`sumar_dias`, 28/10/2026 + 15 días).
+    - Con o sin contar el día de emisión, el resultado es el mismo: contando el día de emisión como día 1, hoy sería el día 14; sin contarlo, son 13 días. En ambos casos queda dentro del plazo de 15 días, así que **el presupuesto sigue vigente**. Si se confirma después del 12/11/2026, ya estaría vencido.
+    
+    **(b) Precio con 18 % de  […]
+
+[SUPERVISOR · ronda 4] → sintetizador (llm): El rol aprobador sí está en la ronda 1 del investigador (gerencia aprueba descuentos mayores al 15 %, citado de 02-autenticacion-y-roles.md), así que el analista se equivocó al decir que faltaba. La vigencia (13 de 15 días) y el precio con descuento ($967.600) están cubiertos. La base de la seña no aparece tras cinco búsquedas, así que el sintetizador debe presentar los dos escenarios y señalar explícitamente que el manual no la define.
+
+[SINTETIZADOR] respuesta final:
+    1. **¿Sigue vigente el presupuesto?** Sí. Desde el 28/10/2026 pasaron 13 días corridos (14 si contás el día de emisión como día 1), y el plazo es de 15 días corridos [03-api-ventas.md, "Endpoints principales" y "Errores de la API de ventas"]. Vence el 12/11/2026, así que si se confirma después de esa fecha ya estaría vencido.
+    
+    2. **Precio con 18 % de descuento:** $1.180.000 × 0,82 = **$967.600**.
+    
+    3. **Seña:** El manual exige cobrar el 50 % al confirmar un mueble a medida [03-api-ventas.md, "Cuerpo de una venta"], pero no define sobre qué base se calcula. Si es sobre el precio de lista, la seña es **$590.000**. Si es sobre el precio con descuento, es **$483.800**. No hay elementos para elegir una de las dos; hay que confirmarlo con el supervisor antes de cobrar.
+    
+    4. **Rol que puede aprobar el descuento:** **Gerencia**. El manual le asigna aprobar descuentos mayores al 15 % [02-autenticacion-y-roles.md, "Roles del sistema", tabla de roles]. El 18 % supera ese límite, y el rol encargado_local solo puede aplicar hasta el 15 %. Ningún otro rol aparece con permisos de descuento.
+    
+    Nota: el análisis final dice que falta el dato del rol aprobador, pero el investigador lo encontró en la ronda 1, así que esa afirmación no es correcta.
+
+Recorrido: supervisor → investigador → supervisor → investigador → supervisor → analista → supervisor → sintetizador → END  (51.9 s)
+Traza guardada en trazas/traza_ejemplo.json y .log

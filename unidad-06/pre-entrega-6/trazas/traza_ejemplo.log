@@ -1,0 +1,47 @@
+Pregunta: Hoy es 10/11/2026. Un cliente pidió el 28/10/2026 un presupuesto por una biblioteca a medida de $1.180.000 y quiere confirmarlo con un 18 % de descuento. Según el manual del ERP: ¿el presupuesto sigue vigente?, ¿cuánto queda el precio con el descuento y cuánto tiene que pagar de seña?, ¿qué rol puede aprobar ese descuento?
+
+Recorrido: supervisor → investigador → supervisor → analista → supervisor → sintetizador → END
+
+
+
+[SUPERVISOR · ronda 1] → investigador (llm): No hay contribuciones todavía, así que hacen falta primero las reglas de negocio con sus fuentes antes de cualquier cálculo.
+    instrucción: Buscá en el manual técnico del ERP: (1) el plazo de vigencia de un presupuesto a medida y si su vencimiento se cuenta en días corridos o hábiles; (2) el porcentaje de seña requerido para confirmar un pedido de mueble a medida; (3) qué roles pueden aprobar un descuento y hasta qué porcentaje, especialmente para descuentos del 18 %. Citá la sección o página de cada regla.
+
+[INVESTIGADOR] herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 04-integracion-afip.pdf, 05-caja-y-bancos.md, 06-inventario.md, 07-integracion-tiendanube.md, 08-codigos-de-error.json
+    Hallazgos del manual (4 búsquedas realizadas):
+    
+    **(1) Vigencia del presupuesto**
+    - "Crea un presupuesto. Validez: 15 días corridos" [03-api-ventas.md, sección "Endpoints principales"].
+    - "El presupuesto venció (pasaron más de 15 días)" [03-api-ventas.md, sección "Errores de la API de ventas", código VTA-410-PRES; también 08-codigos-de-error.json].
+    - Sobre si el vencimiento se cuenta en días hábiles: el manual solo dice "corridos"; no hay regla de días hábiles para presupuestos.
+    
+    **(2) Seña para mueble a medida**
+    - "Las ventas de muebles a medida se crean siempre con `seña` y requieren cobrar e […]
+
+[SUPERVISOR · ronda 2] → analista (llm): Faltan los cálculos de vigencia, precio con descuento y seña, que deben hacerse con herramientas a partir de las reglas ya aportadas por el investigador.
+    instrucción: Con las reglas del investigador (validez de presupuesto de 15 días corridos; seña del 50 % al confirmar una venta de mueble a medida; descuento de 18 % sobre $1.180.000), calculá: (a) la fecha de vencimiento del presupuesto emitido el 28/10/2026 contando días corridos, y si está vigente al 10/11/2026; (b) el precio final con 18 % de descuento; (c) la seña del 50 % sobre ese precio final. Indicá explícitamente que la seña se calculó sobre el precio con descuento, porque el manual no especifica la base del cálculo.
+
+[ANALISTA] herramientas: sumar_dias, dias_entre_fechas, aplicar_porcentaje, aplicar_porcentaje, calcular
+    **Resultados para el presupuesto de la biblioteca a medida**
+    
+    **(a) Vigencia del presupuesto**
+    - **Vencimiento: 12/11/2026.** Cálculo: 28/10/2026 + 15 días corridos, según la regla "Validez: 15 días corridos" (03-api-ventas.md, "Endpoints principales").
+    - **Vigente al 10/11/2026: sí.** Pasaron 13 días corridos desde la emisión (28/10 → 10/11), menos de los 15 de validez. El error VTA-410-PRES ("pasaron más de 15 días") no aplica todavía.
+    - Mañana, 11/11/2026, seguiría vigente. Desde el 13/11/2026 el presupuesto estaría vencido.
+    
+    **(b) Precio final con 18 % de descuento**
+    - **$967.600.** Cálcul […]
+
+[SUPERVISOR · ronda 3] → sintetizador (llm): Las reglas tienen fuente (validez de 15 días corridos, seña del 50 % y roles de descuento) y los cálculos son correctos: vencimiento 12/11/2026 y vigente el 10/11, precio final $967.600 y seña $483.800. La base de la seña no está especificada en el manual, pero la regla del 50 % sobre la venta cubre el caso, así que el sintetizador debe incluir esa aclaración.
+
+[SINTETIZADOR] respuesta final:
+    1. **¿El presupuesto sigue vigente?** Sí. La validez es de 15 días corridos [03-api-ventas.md, "Endpoints principales"], así que vence el 12/11/2026. Al 10/11/2026 pasaron 13 días desde el 28/10. El error VTA-410-PRES solo aplica cuando pasan más de 15 días [03-api-ventas.md, "Errores de la API de ventas"].
+    
+    2. **Precio con descuento y seña:**
+       - Precio final con 18 % de descuento: **$967.600** ($1.180.000 − $212.400).
+       - Seña del 50 % al confirmar una venta de mueble a medida [03-api-ventas.md, "Cuerpo de una venta"]: **$483.800**, calculada sobre el precio con descuento.
+       - El manual no dice sobre qué base se calcula la seña. Si fuera sobre los $1.180.000 originales, serían $590.000. Antes de cobrar, conviene confirmar esa base.
+    
+    3. **¿Qué rol puede aprobar el descuento?** Un descuento del 18 % supera el 15 %, así que lo aprueba **gerencia** [02-autenticacion-y-roles.md, "Roles del sistema"]. El rol `encargado_local` solo puede aplicar hasta 15 %. El manual no menciona a `admin` para aprobar descuentos.
+    
+    *Supuesto: el plazo de 15 días se cuenta desde la fecha de emisión del presupuesto (28/10). Si se contara desde otra fecha, la vigencia podría cambiar.*
