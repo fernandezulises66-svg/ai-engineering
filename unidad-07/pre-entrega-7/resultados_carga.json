@@ -1,0 +1,55 @@
+{
+  "total_s": 62.7,
+  "jobs": [
+    {
+      "n": 1,
+      "job_id": "cba832d7fc8a49af9664bfaa4162983c",
+      "status": "DONE",
+      "latencia_s": 62.7,
+      "recorrido": "investigador → investigador → analista → investigador → sintetizador",
+      "es_critica": false,
+      "accion": "",
+      "error": ""
+    },
+    {
+      "n": 2,
+      "job_id": "d3b38ee51f754fbb99bce3fbd46a1735",
+      "status": "DONE",
+      "latencia_s": 20.2,
+      "recorrido": "investigador → sintetizador",
+      "es_critica": false,
+      "accion": "",
+      "error": ""
+    },
+    {
+      "n": 3,
+      "job_id": "4d18a40465294b5c9d12ac56a4bdec12",
+      "status": "DONE",
+      "latencia_s": 22.2,
+      "recorrido": "investigador → analista → sintetizador",
+      "es_critica": false,
+      "accion": "",
+      "error": ""
+    },
+    {
+      "n": 4,
+      "job_id": "358422ac8d8647658f2d638c4615a2ff",
+      "status": "DONE",
+      "latencia_s": 38.4,
+      "recorrido": "investigador → analista → sintetizador",
+      "es_critica": false,
+      "accion": "",
+      "error": ""
+    },
+    {
+      "n": 5,
+      "job_id": "a1cef4a72105424883ae7d61578e5d0a",
+      "status": "DONE",
+      "latencia_s": 58.6,
+      "recorrido": "investigador → analista → investigador → sintetizador",
+      "es_critica": true,
+      "accion": "Acción 'aplicar_descuento' registrada en el ERP (registro #1), aprobada por gerencia.",
+      "error": ""
+    }
+  ]
+}
