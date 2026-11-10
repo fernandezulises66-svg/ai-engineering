@@ -98,7 +98,8 @@ class Worker:
                 else:
                     await self.store.actualizar(job_id, JobStatus.DONE, resultado=_resumen(estado),
                                                 duracion_ultima_ejecucion_s=round(time.perf_counter() - inicio, 2))
-                    span.set_attribute("output.value", estado.get("respuesta_final", "")[:4000])
+                    salida = estado.get("accion_resultado") if tipo == "resume" else estado.get("respuesta_final")
+                    span.set_attribute("output.value", (salida or "")[:4000])
                     logger.info("job %s terminado en %.1f s", job_id, time.perf_counter() - inicio)
             except asyncio.CancelledError:
                 await self.store.actualizar(job_id, JobStatus.FAILED, error="Worker detenido durante la ejecución")

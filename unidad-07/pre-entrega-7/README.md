@@ -137,4 +137,43 @@ pytest -v
 
 ## Resultados y capturas
 
-*Se completa con la corrida real.*
+Corrida real con `python scripts/carga.py --aprobar`, usando Anthropic `claude-haiku-5-5` y el Pinecone de la PE4. El detalle está en [`resultados_carga.json`](./resultados_carga.json).
+
+| # | Pregunta | Recorrido del supervisor | Latencia (cliente) |
+|---|---|---|---|
+| 1 | Vigencia, descuento, seña y rol aprobador | investigador → investigador → analista → investigador → sintetizador | 62,7 s |
+| 2 | Qué significa `CAJA-422-JUST` | investigador → sintetizador (no hacía falta calcular) | 20,2 s |
+| 3 | Diferencia de caja de $7.300 | investigador → analista → sintetizador | 22,2 s |
+| 4 | Días de validez y error al vencer | investigador → analista → sintetizador | 38,4 s |
+| 5 | **Crítica:** aplicar el descuento y registrarlo | investigador → analista → investigador → sintetizador → **pausa** → aprobada por gerencia → `ejecutar_accion` | 58,6 s |
+
+- **Sin bloquear:** cada `POST /tasks` respondió en 25 a 55 ms. Las 5 corrieron en paralelo y terminaron en 62,7 s; en serie habrían tardado 202 s.
+- **Human-in-the-loop:** la n.º 5 quedó en `WAITING_APPROVAL` sin tocar el ERP. Después del `POST /approve`, el worker la reanudó desde el checkpoint de Redis y registró la acción.
+
+### Métricas del dashboard de Phoenix
+
+| Métrica | Valor | Captura |
+|---|---|---|
+| **Latencia p95** de las 5 ejecuciones (bucket de las 08:46) | **60,01 s** (p50 38,35 s · p90 58,99 s · máx 61,03 s) | [`05-latencia-p95.png`](./screenshots/05-latencia-p95.png) |
+| **Costo** de la corrida | **≈ $0,03** ($0,02 de entrada + $0,01 de salida), **≈ $0,006 por ejecución**. La traza más cara, la consulta 1, costó $0,01 | [`04-costo.png`](./screenshots/04-costo.png), [`04b-costo-por-modelo.png`](./screenshots/04b-costo-por-modelo.png) |
+| Tokens de la tarea crítica | 60.477 tokens en `job.start`; `job.resume` usó 0 tokens y tardó 25 ms | [`03b-hitl-sesion.png`](./screenshots/03b-hitl-sesion.png) |
+
+### Lectura del dashboard
+
+- **Dónde se concentra la latencia:** en el **investigador**. Cada `pinecone.similarity_search` tarda unos 3,5–3,8 s, entre el embedding de la consulta en OpenAI y la búsqueda en Pinecone. Como el investigador hace varias búsquedas por ronda, ese nodo tardó 11,1 s en la consulta 1. Las herramientas del analista tardan milisegundos (`dias_entre_fechas`: 2 ms), y su tiempo es casi todo LLM.
+- **Qué consume más tokens:** las llamadas que cargan más contexto. El **sintetizador**, con unos 4.800–5.000 tokens por llamada, recibe toda la pizarra. El **supervisor** pasa de unos 1.250 tokens en la primera ronda a unos 4.500 en las últimas, a medida que crece la pizarra. El investigador acumula los fragmentos del manual dentro de su ciclo ReAct.
+- **Por qué varía tanto la latencia:** la p50 es de 38 s y la máxima de 61 s porque depende de cuántas rondas pide el supervisor. La consulta 2 resolvió en una sola ronda (20 s); la 1 necesitó tres búsquedas del investigador (63 s).
+- **Qué optimizar primero:** cachear los embeddings y resultados de Pinecone para consultas repetidas, y pasarle al sintetizador solo la última contribución de cada especialista.
+
+### Capturas
+
+| Archivo | Qué muestra |
+|---|---|
+| [`01-trazas.png`](./screenshots/01-trazas.png) | Las 6 trazas de la corrida (5 `job.start` + 1 `job.resume`), con los gráficos de volumen y de latencia por percentiles |
+| [`02a`](./screenshots/02a-traza-supervisor.png) a [`02d`](./screenshots/02d-traza-sintetizador.png) | Árbol completo de una traza: supervisor, investigador (`buscar_manual`), analista (herramientas), sintetizador, `evaluar_riesgo` y búsquedas en Pinecone, con tokens y costo |
+| [`03a-hitl-pausa.png`](./screenshots/03a-hitl-pausa.png) | La tarea crítica termina en `aprobacion_humana` (evento del `interrupt`) |
+| [`03b-hitl-sesion.png`](./screenshots/03b-hitl-sesion.png) | Sesión del job: turno 1 en `WAITING_APPROVAL` y turno 2 con la reanudación |
+| [`04-costo.png`](./screenshots/04-costo.png) | Costo de la corrida: $0,02 de entrada y $0,01 de salida |
+| [`05-latencia-p95.png`](./screenshots/05-latencia-p95.png) | Latencia p95 = 60,01 s |
+
+> Después de esta corrida se ajustaron dos detalles de presentación: el sintetizador ya no escribe "no registré la acción" cuando la tarea está pendiente de aprobación, y la salida de `job.resume` en Phoenix ahora muestra el resultado de `ejecutar_accion`.

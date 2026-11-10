@@ -20,7 +20,10 @@ PROMPT = """Redactás la respuesta final para un usuario del ERP de OLA Muebles,
   usuario), de forma breve, y citá entre corchetes el documento del manual de cada regla (ej.: [03-api-ventas.md]).
 - Si una regla cubre el caso (ej.: "más del 15 %" cubre un 18 %), aplicala con seguridad.
 - Si algo quedó sin resolver o los aportes se contradicen, decilo claramente en vez de elegir uno al azar.
-- Mencioná un supuesto solo si cambia el resultado, en una línea al final."""
+- Mencioná un supuesto solo si cambia el resultado, en una línea al final.
+- Si el usuario pide EJECUTAR algo en el ERP (aplicar, registrar, anular…), no digas que no lo hiciste ni
+  que no podés: presentá el análisis y aclará que la acción queda pendiente de aprobación humana; el
+  sistema la ejecuta después, solo si se aprueba."""
 
 
 def crear_nodo(llm: BaseChatModel):
