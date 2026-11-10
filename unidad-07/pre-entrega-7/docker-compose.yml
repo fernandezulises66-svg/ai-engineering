@@ -1,0 +1,37 @@
+# docker compose up --build   →   API en :8000 · Phoenix en :6006 · Redis en :6379
+services:
+  redis:
+    image: redis:8                     # Redis 8 trae RedisJSON y RediSearch (los necesita el RedisSaver de LangGraph)
+    ports: ["6379:6379"]
+    command: ["redis-server", "--appendonly", "yes"]   # persistencia en disco
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest   # dashboard de trazas, costo y latencia
+    ports:
+      - "6006:6006"                      # UI + colector OTLP/HTTP (/v1/traces)
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    volumes: [phoenix-data:/mnt/data]
+
+  api:
+    build: .
+    ports: ["8000:8000"]
+    env_file: .env                       # keys de Anthropic, OpenAI y Pinecone (no se suben al repo)
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+      MANUAL_DIR: /manual
+    volumes:
+      - ../../unidad-04/pre-entrega-4/data:/manual:ro   # manual del ERP (solo para RESEARCH_BACKEND=local)
+    depends_on:
+      redis: {condition: service_healthy}
+      phoenix: {condition: service_started}
+
+volumes:
+  redis-data:
+  phoenix-data:
