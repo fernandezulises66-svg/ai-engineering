@@ -16,6 +16,9 @@ services:
       - "6006:6006"                      # UI + colector OTLP/HTTP (/v1/traces)
     environment:
       PHOENIX_WORKING_DIR: /mnt/data
+      # Phoenix activa el login (y exige API key para recibir trazas) cuando escucha en 0.0.0.0, como
+      # dentro de Docker. En este entorno local lo desactivamos; en producción iría en true con API keys.
+      PHOENIX_ENABLE_AUTH: "false"
     volumes: [phoenix-data:/mnt/data]
 
   api:
